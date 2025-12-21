@@ -40,7 +40,14 @@ jobs:
             "appId": "dev.aiforme.zhiyutong",
             "appName": "智语通",
             "webDir": "dist",
-            "bundledWebRuntime": false
+            "bundledWebRuntime": false,
+            "server": {
+              "url": "http://22.gaistudio.dev.aiforme.site/",
+              "cleartext": true
+            },
+            "allowNavigation": [
+              "22.gaistudio.dev.aiforme.site"
+            ]
           }
           JSON
 
