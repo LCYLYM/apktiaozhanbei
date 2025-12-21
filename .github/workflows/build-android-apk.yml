@@ -1,0 +1,88 @@
+name: Build Android APK (Debug)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web (Vite)
+        run: npm run build
+
+      - name: Install Capacitor (local)
+        run: npm install -D @capacitor/cli @capacitor/core @capacitor/android
+
+      - name: Generate Capacitor config (local web assets)
+        run: |
+          cat > capacitor.config.json <<'JSON'
+          {
+            "appId": "dev.aiforme.zhiyutong",
+            "appName": "智语通",
+            "webDir": "dist",
+            "bundledWebRuntime": false
+          }
+          JSON
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Sync Android
+        run: npx cap sync android
+
+      - name: Fix Kotlin duplicate stdlib (exclude jdk7/jdk8)
+        shell: python
+        run: |
+          from pathlib import Path
+
+          file = Path('android/app/build.gradle')
+          if not file.exists():
+              raise SystemExit(f'Expected {file} to exist, but it does not.')
+
+          marker = 'COPILOT_KOTLIN_STDLIB_EXCLUDES'
+          patch = (
+              "\n\n"
+              "// COPILOT_KOTLIN_STDLIB_EXCLUDES\n"
+              "// Workaround for :app:checkDebugDuplicateClasses failures caused by mixed Kotlin stdlib artifacts.\n"
+              "// See Gradle docs: excluding transitive dependencies via configurations.\n"
+              "configurations.configureEach {\n"
+              "    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'\n"
+              "    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'\n"
+              "}\n"
+          )
+
+          content = file.read_text(encoding='utf-8', errors='ignore')
+          if marker not in content:
+              file.write_text(content + patch, encoding='utf-8')
+
+      - name: Build APK (Debug)
+        run: |
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

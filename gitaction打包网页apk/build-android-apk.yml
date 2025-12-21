@@ -1,0 +1,67 @@
+# 注意：GitHub Actions 只会从 .github/workflows/ 读取工作流。
+# 你需要把本文件复制到：.github/workflows/build-android-apk.yml
+# 产物：android/app/build/outputs/apk/debug/app-debug.apk
+
+name: Build Android APK (Debug)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web (Vite)
+        run: npm run build
+
+      - name: Install Capacitor (local)
+        run: npm install -D @capacitor/cli @capacitor/core @capacitor/android
+
+      - name: Generate Capacitor config (local web assets)
+        run: |
+          cat > capacitor.config.json <<'JSON'
+          {
+            "appId": "dev.aiforme.zhiyutong",
+            "appName": "智语通",
+            "webDir": "dist",
+            "bundledWebRuntime": false
+          }
+          JSON
+
+      - name: Add Android platform (if missing)
+        run: npx cap add android || echo "android already exists"
+
+      - name: Sync Android
+        run: npx cap sync android
+
+      - name: Build APK (Debug)
+        run: |
+          cd android
+          ./gradlew assembleDebug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

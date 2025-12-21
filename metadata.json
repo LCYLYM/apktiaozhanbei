@@ -1,0 +1,9 @@
+{
+  "name": "智语通",
+  "description": "A hybrid-cloud emergency response system combining offline logic with online AI intelligence. Features a Glassmorphism UI, multi-language medical translation, and SOS tools.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
