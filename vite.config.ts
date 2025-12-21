@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
       preview: {
         port: 3000,
         host: '0.0.0.0',
+        allowedHosts: ['22.gaistudio.dev.aiforme.site', '.aiforme.site'],
       },
       plugins: [react(), viteSingleFile()],
       build: {
