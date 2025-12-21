@@ -1,9 +1,43 @@
 export enum ViewState {
   DASHBOARD = 'DASHBOARD',
   OFFLINE_MEDICAL = 'OFFLINE_MEDICAL',
+  OFFLINE_POLICE = 'OFFLINE_POLICE',
   AI_CENTER = 'AI_CENTER',
   SOS_TOOLS = 'SOS_TOOLS',
-  PROFILE = 'PROFILE'
+  PROFILE = 'PROFILE',
+  PRICING = 'PRICING',
+  CHECKOUT = 'CHECKOUT'
+}
+
+export type SubscriptionPlanId = 'personal' | 'enterprise' | 'government';
+
+export type SubscriptionStatus = 'none' | 'active';
+
+export interface SubscriptionState {
+  status: SubscriptionStatus;
+  planId?: SubscriptionPlanId;
+  planName?: string;
+  startedAt?: number;
+  renewAt?: number;
+  orgConfig?: OrgConfig;
+}
+
+export type OrgAccountRole = 'admin' | 'member';
+
+export interface OrgAccount {
+  id: string;
+  displayName: string;
+  role: OrgAccountRole;
+  createdAt: number;
+}
+
+export interface OrgConfig {
+  orgName?: string;
+  accounts: OrgAccount[];
+  settings: {
+    aiChatEnabled: boolean;
+    visionEnabled: boolean;
+  };
 }
 
 export enum AppLanguage {
@@ -44,4 +78,5 @@ export interface ChatMessage {
   translation?: string;
   medicalNote?: string;
   image?: string; // base64
+  tag?: string;
 }

@@ -1,8 +1,23 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AppLanguage } from '../types';
 
+const resolveApiKey = (): string | undefined => {
+    // Vite exposes env vars on import.meta.env.* (and only VITE_ prefixed by default)
+    const viteKeyRaw = import.meta.env.VITE_API_KEY as string | undefined;
+    const viteKey = typeof viteKeyRaw === 'string' ? viteKeyRaw.trim() : undefined;
+    if (viteKey) return viteKey;
+
+    // Back-compat fallback (some environments inject API_KEY)
+    const legacyKeyRaw = (import.meta.env as any)?.API_KEY as string | undefined;
+    const legacyKey = typeof legacyKeyRaw === 'string' ? legacyKeyRaw.trim() : undefined;
+    if (legacyKey) return legacyKey;
+
+    return undefined;
+};
+
 // Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKey = resolveApiKey();
+const ai = new GoogleGenAI({ apiKey: apiKey ?? '' });
 
 const SYSTEM_PROMPT = `
 You are ZhiYuTong (智语通), an emergency crisis translation assistant designed for foreigners in China.
@@ -27,6 +42,9 @@ export const GeminiService = {
    */
   async translateAndAdvise(text: string, targetLang: string): Promise<TranslationResponse> {
     try {
+                if (!apiKey) {
+                    throw new Error('Missing API key: set VITE_API_KEY');
+                }
         const prompt = `
         User Input: "${text}"
         Target Language Code: ${targetLang}
@@ -58,18 +76,18 @@ export const GeminiService = {
         throw new Error("Empty response from AI");
     } catch (error) {
         console.error("Gemini Translation Error:", error);
-        return {
-            translation: "Connection Error / 连接错误",
-            medical_note: "Please use Offline Mode / 请使用离线模式"
-        };
+        throw error;
     }
   },
 
   /**
    * Analyzes an image (e.g., medicine, injury) and provides insight.
    */
-  async analyzeImage(base64Data: string, targetLang: string): Promise<TranslationResponse> {
+    async analyzeImage(base64Data: string, targetLang: string, mimeType?: string): Promise<TranslationResponse> {
     try {
+                if (!apiKey) {
+                    throw new Error('Missing API key: set VITE_API_KEY');
+                }
         const prompt = `
         Analyze this image. It is likely a medical situation (injury, medication, or document) encountered by a foreigner in China.
         Target Language Code: ${targetLang}
@@ -80,7 +98,7 @@ export const GeminiService = {
 
         const imagePart = {
             inlineData: {
-                mimeType: 'image/jpeg', 
+                mimeType: mimeType || 'image/jpeg', 
                 data: base64Data
             }
         };
@@ -114,10 +132,7 @@ export const GeminiService = {
 
     } catch (error) {
         console.error("Gemini Vision Error:", error);
-        return {
-            translation: "Image Analysis Failed / 图片分析失败",
-            medical_note: "Check internet connection / 请检查网络"
-        };
+        throw error;
     }
   }
 };

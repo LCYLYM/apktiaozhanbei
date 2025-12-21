@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Volume2 } from 'lucide-react';
-import { OFFLINE_DICTIONARY, LANGUAGES } from '../constants';
+import { OFFLINE_DICTIONARY, OFFLINE_POLICE_DICTIONARY, LANGUAGES } from '../constants';
 import { AppLanguage, DictionaryItem, UserProfile } from '../types';
 
 interface Props {
   onBack: () => void;
   userProfile: UserProfile;
+  initialCategory?: string;
 }
 
 type Step = 'CATEGORY' | 'SYMPTOM' | 'DISPLAY';
 
-const OfflineMode: React.FC<Props> = ({ onBack, userProfile }) => {
+const OfflineMode: React.FC<Props> = ({ onBack, userProfile, initialCategory }) => {
   const [step, setStep] = useState<Step>('CATEGORY');
-  const [selectedCategory, setSelectedCategory] = useState<string>('chest');
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory || 'chest');
   const [selectedItem, setSelectedItem] = useState<DictionaryItem | null>(null);
   
   // Default to English for the user interface, but this controls the "Source" language
@@ -22,6 +23,9 @@ const OfflineMode: React.FC<Props> = ({ onBack, userProfile }) => {
     { id: 'chest', label: '胸部 / 呼吸', sub: 'Chest / Breathing', color: 'from-red-400 to-red-600', icon: '🫁' },
     { id: 'stomach', label: '腹部 / 消化', sub: 'Stomach / Digestion', color: 'from-orange-400 to-orange-600', icon: '🤢' },
     { id: 'injury', label: '外伤 / 骨折', sub: 'Injury / Fracture', color: 'from-blue-400 to-blue-600', icon: '🤕' },
+    { id: 'police_emergency', label: '警方求助', sub: 'Emergency / Police', color: 'from-indigo-500 to-purple-600', icon: '🚨' },
+    { id: 'police_lost', label: '迷路 / 证件', sub: 'Lost / Passport', color: 'from-amber-400 to-orange-500', icon: '🧭' },
+    { id: 'police_theft', label: '盗窃 / 抢夺', sub: 'Theft', color: 'from-slate-700 to-slate-900', icon: '🕵️' },
   ];
 
   const handleSpeak = (text: string) => {
@@ -77,7 +81,13 @@ const OfflineMode: React.FC<Props> = ({ onBack, userProfile }) => {
   );
 
   const renderSymptomSelection = () => {
-    const items = OFFLINE_DICTIONARY[selectedCategory] || [];
+    const unifiedDictionary: Record<string, DictionaryItem[]> = {
+      ...OFFLINE_DICTIONARY,
+      police_emergency: OFFLINE_POLICE_DICTIONARY.emergency,
+      police_lost: OFFLINE_POLICE_DICTIONARY.lost,
+      police_theft: OFFLINE_POLICE_DICTIONARY.theft,
+    };
+    const items = unifiedDictionary[selectedCategory] || [];
     return (
       <div className="grid gap-3 p-4 animate-in fade-in slide-in-from-right-4 duration-300">
         <h2 className="text-slate-500 font-bold ml-2 text-xs uppercase tracking-wider mb-1">Select Description</h2>
@@ -108,8 +118,8 @@ const OfflineMode: React.FC<Props> = ({ onBack, userProfile }) => {
     // VERIFICATION: User's Language (For Foreigner)
     const userText = selectedItem.term[userNativeLang] || "Translation missing";
     
-    const hasRelevance = userProfile.medicalConditions && 
-        (selectedCategory === 'chest' || selectedCategory === 'stomach');
+    const hasRelevance =
+      userProfile.medicalConditions && (selectedCategory === 'chest' || selectedCategory === 'stomach');
 
     return (
       <div className="flex flex-col h-full p-4 animate-in zoom-in-95 duration-300">
@@ -166,7 +176,7 @@ const OfflineMode: React.FC<Props> = ({ onBack, userProfile }) => {
         }} className="glass-button p-3 rounded-full hover:bg-white/60 text-slate-700 shadow-sm">
             <ArrowLeft size={20} />
         </button>
-        <h1 className="text-lg font-bold text-slate-800 drop-shadow-sm">离线助手 (Offline)</h1>
+        <h1 className="text-lg font-bold text-slate-800 drop-shadow-sm">离线助手（医疗/警方）</h1>
       </div>
       
       {/* Hide Language Selector on Display Card to keep it clean for the doctor */}

@@ -1,13 +1,14 @@
 import React from 'react';
-import { Activity, Shield, Zap, User, Settings, Signal, WifiOff, Globe } from 'lucide-react';
+import { Activity, Shield, Zap, User, Crown, Signal, WifiOff } from 'lucide-react';
 import { ViewState } from '../types';
 
 interface Props {
   onNavigate: (view: ViewState) => void;
   isOnline: boolean;
+  hasSubscription: boolean;
 }
 
-const BentoGrid: React.FC<Props> = ({ onNavigate, isOnline }) => {
+const BentoGrid: React.FC<Props> = ({ onNavigate, isOnline, hasSubscription }) => {
   return (
     <div className="flex flex-col h-full p-5 gap-5 animate-in fade-in duration-500 z-10 relative">
       {/* Header / Status Bar */}
@@ -46,7 +47,7 @@ const BentoGrid: React.FC<Props> = ({ onNavigate, isOnline }) => {
 
         {/* Police / Safety - Wide but constrained in grid */}
         <button 
-            onClick={() => onNavigate(ViewState.OFFLINE_MEDICAL)} // Demo links to same logic context
+          onClick={() => onNavigate(ViewState.OFFLINE_POLICE)}
             className="col-span-1 row-span-2 glass-card rounded-[2rem] p-5 flex flex-col justify-between relative overflow-hidden group active:scale-95 transition-transform duration-200 border-white/40"
         >
            <div className="absolute -top-4 -right-4 p-4 opacity-10 transform -rotate-12 group-hover:scale-110 transition-transform">
@@ -80,7 +81,7 @@ const BentoGrid: React.FC<Props> = ({ onNavigate, isOnline }) => {
 
         {/* AI Assistant - Large if Online */}
         <button 
-           onClick={() => onNavigate(ViewState.AI_CENTER)}
+            onClick={() => onNavigate(hasSubscription ? ViewState.AI_CENTER : ViewState.PRICING)}
            disabled={!isOnline}
            className={`col-span-2 row-span-2 rounded-[2rem] shadow-lg p-5 flex flex-col justify-center items-center relative overflow-hidden active:scale-95 transition-transform duration-200 border border-white/40 ${isOnline ? 'glass-card bg-indigo-600/5' : 'bg-slate-200/50 grayscale opacity-80'}`}
         >
@@ -92,7 +93,9 @@ const BentoGrid: React.FC<Props> = ({ onNavigate, isOnline }) => {
                     <Activity size={32} className={isOnline ? 'animate-pulse' : ''} />
                 </div>
                 <h2 className="text-lg font-bold text-slate-800">AI 智能中枢</h2>
-                <p className="text-xs text-slate-500 font-medium mt-1">{isOnline ? 'Smart Translation & Vision' : 'Connect to Internet'}</p>
+                <p className="text-xs text-slate-500 font-medium mt-1">
+                  {isOnline ? (hasSubscription ? 'Smart Translation & Vision' : '订阅解锁高级功能') : 'Connect to Internet'}
+                </p>
             </div>
         </button>
 
@@ -106,9 +109,12 @@ const BentoGrid: React.FC<Props> = ({ onNavigate, isOnline }) => {
         </button>
 
         {/* Settings (Placeholder) */}
-        <button className="col-span-1 row-span-1 glass-card bg-white/30 rounded-[2rem] p-4 flex flex-col justify-center items-center active:scale-95 transition-transform duration-200">
-          <Settings size={24} className="text-slate-500 mb-1" />
-          <span className="text-xs font-bold text-slate-500">设置</span>
+        <button
+          onClick={() => onNavigate(ViewState.PRICING)}
+          className="col-span-1 row-span-1 glass-card bg-white/30 rounded-[2rem] p-4 flex flex-col justify-center items-center active:scale-95 transition-transform duration-200"
+        >
+          <Crown size={24} className={hasSubscription ? 'text-amber-500 mb-1' : 'text-slate-500 mb-1'} />
+          <span className="text-xs font-bold text-slate-600">{hasSubscription ? '订阅管理' : '订阅开通'}</span>
         </button>
 
       </div>

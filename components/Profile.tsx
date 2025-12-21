@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Save, CreditCard } from 'lucide-react';
-import { UserProfile } from '../types';
+import { ArrowLeft, Save, CreditCard, Crown, Trash2 } from 'lucide-react';
+import { SubscriptionState, UserProfile } from '../types';
 
 interface Props {
   onBack: () => void;
   currentProfile: UserProfile;
   onSave: (p: UserProfile) => void;
+    subscription: SubscriptionState;
+    onCancelSubscription: () => void;
 }
 
-const Profile: React.FC<Props> = ({ onBack, currentProfile, onSave }) => {
+const Profile: React.FC<Props> = ({ onBack, currentProfile, onSave, subscription, onCancelSubscription }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<UserProfile>(currentProfile);
 
@@ -42,6 +44,38 @@ const Profile: React.FC<Props> = ({ onBack, currentProfile, onSave }) => {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar pb-20">
+
+                {/* Subscription */}
+                <div className="glass-card bg-white/70 p-5 rounded-[2rem] shadow-sm border-white/60">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <div className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                订阅状态 <Crown size={14} className={subscription.status === 'active' ? 'text-amber-500' : 'text-slate-400'} />
+                            </div>
+                            <div className="text-xs text-slate-500 font-medium mt-1">
+                                {subscription.status === 'active'
+                                    ? `已开通：${subscription.planName ?? subscription.planId ?? '订阅'}（本地）`
+                                    : '未开通：高级功能（AI 对话等）将受限'}
+                            </div>
+                        </div>
+
+                        {subscription.status === 'active' && (
+                            <button
+                                onClick={onCancelSubscription}
+                                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50/70 text-rose-700 border border-rose-200/60 hover:bg-rose-50 transition-colors flex items-center gap-2"
+                                aria-label="取消订阅"
+                            >
+                                <Trash2 size={14} /> 取消
+                            </button>
+                        )}
+                    </div>
+
+                    {subscription.status === 'active' && subscription.renewAt && (
+                        <div className="mt-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                            Next renew: {new Date(subscription.renewAt).toLocaleDateString()}
+                        </div>
+                    )}
+                </div>
         
         {/* ID Card / QR Section */}
         <div className="glass-card bg-white/70 p-6 rounded-[2rem] shadow-xl flex flex-col items-center text-center border-white/60">
