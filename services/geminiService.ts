@@ -37,6 +37,9 @@ interface TranslationResponse {
 }
 
 export const GeminiService = {
+    isConfigured(): boolean {
+        return Boolean(apiKey);
+    },
   /**
    * Translates text and provides emergency context.
    */

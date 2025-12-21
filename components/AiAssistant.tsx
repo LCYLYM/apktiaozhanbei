@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Camera, Loader2, Send, Sparkles } from 'lucide-react';
 import { GeminiService } from '../services/geminiService';
+import { OpenAICompatService } from '../services/openaiCompatService';
 import { LANGUAGES } from '../constants';
 import { AppLanguage, ChatMessage } from '../types';
 
@@ -14,6 +15,9 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [targetLang, setTargetLang] = useState<string>(AppLanguage.ZH);
+
+    const useOpenAIText = OpenAICompatService.isConfigured();
+    const visionSupported = GeminiService.isConfigured() || OpenAICompatService.isVisionSupported();
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,6 +53,12 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
         if (lower.includes('missing api key') || lower.includes('vite_api_key')) {
             return 'AI 未配置：请设置 VITE_API_KEY 后重试。';
         }
+        if (lower.includes('missing openai-compatible config') || lower.includes('vite_openai_api_key') || lower.includes('vite_api_url')) {
+            return 'AI 未配置：请设置 VITE_API_URL 与 VITE_OPENAI_API_KEY 后重试。';
+        }
+        if (lower.includes('401') || lower.includes('unauthorized')) {
+            return '鉴权失败：请检查 API Key 是否正确/是否已过期。';
+        }
         if (lower.includes('network') || lower.includes('failed to fetch')) {
             return '网络错误：请检查网络连接后重试。';
         }
@@ -75,7 +85,9 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
         setErrorMessage(null);
 
         try {
-            const result = await GeminiService.translateAndAdvise(userMsg.text, targetLang);
+            const result = useOpenAIText
+                ? await OpenAICompatService.translateAndAdvise(userMsg.text, targetLang)
+                : await GeminiService.translateAndAdvise(userMsg.text, targetLang);
             const aiMsg: ChatMessage = {
                 id: (Date.now() + 1).toString(),
                 role: 'model',
@@ -106,6 +118,13 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
         if (!file.type.startsWith('image/')) {
             setErrorMessage('仅支持图片文件（image/*）。');
             appendSystemError('上传失败：请选择图片文件。');
+            e.target.value = '';
+            return;
+        }
+
+        if (!visionSupported) {
+            setErrorMessage('当前 AI 配置不支持图片分析。');
+            appendSystemError('图片分析不可用：请配置 Gemini（VITE_API_KEY）或使用支持图片的模型。');
             e.target.value = '';
             return;
         }
@@ -164,7 +183,9 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
                     <span className="font-bold text-lg text-slate-800 flex items-center gap-1">
                         AI 智语通 <Sparkles size={14} className="text-indigo-500" />
                     </span>
-                    <span className="text-[10px] text-slate-500 font-medium">Gemini 2.5 • Smart Assistant</span>
+                    <span className="text-[10px] text-slate-500 font-medium">
+                        {useOpenAIText ? 'OpenAI Compatible • Smart Assistant' : 'Gemini 2.5 • Smart Assistant'}
+                    </span>
                 </div>
 
                 <button
@@ -261,7 +282,8 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
                         onClick={() => fileInputRef.current?.click()}
                         className="p-3 glass-button rounded-full text-slate-600 hover:text-indigo-600 shadow-sm"
                         aria-label="上传图片"
-                        disabled={isLoading}
+                        disabled={isLoading || !visionSupported}
+                        title={visionSupported ? undefined : '图片分析不可用：请配置 Gemini（VITE_API_KEY）'}
                     >
                         <Camera size={22} />
                     </button>
