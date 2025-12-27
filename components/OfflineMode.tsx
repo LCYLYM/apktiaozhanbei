@@ -22,10 +22,7 @@ const OfflineMode: React.FC<Props> = ({ onBack, userProfile, initialCategory }) 
   const categories = [
     { id: 'chest', label: '胸部 / 呼吸', sub: 'Chest / Breathing', color: 'from-red-400 to-red-600', icon: '🫁' },
     { id: 'stomach', label: '腹部 / 消化', sub: 'Stomach / Digestion', color: 'from-orange-400 to-orange-600', icon: '🤢' },
-    { id: 'injury', label: '外伤 / 骨折', sub: 'Injury / Fracture', color: 'from-blue-400 to-blue-600', icon: '🤕' },
-    { id: 'police_emergency', label: '警方求助', sub: 'Emergency / Police', color: 'from-indigo-500 to-purple-600', icon: '🚨' },
-    { id: 'police_lost', label: '迷路 / 证件', sub: 'Lost / Passport', color: 'from-amber-400 to-orange-500', icon: '🧭' },
-    { id: 'police_theft', label: '盗窃 / 抢夺', sub: 'Theft', color: 'from-slate-700 to-slate-900', icon: '🕵️' },
+    { id: 'injury', label: '外伤 / 骨折', sub: 'Injury / Fracture', color: 'from-blue-400 to-blue-600', icon: '🤕' }
   ];
 
   const handleSpeak = (text: string) => {

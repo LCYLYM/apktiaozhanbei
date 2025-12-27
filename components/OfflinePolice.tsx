@@ -55,7 +55,7 @@ const OfflinePolice: React.FC<Props> = ({ onBack }) => {
           <Shield size={18} />
         </div>
         <div>
-          选择警务场景。应用将生成中文卡片，便于向警察/路人求助。
+          Select police scenario. App will generate Chinese cards for seeking help from police/passersby.
         </div>
       </div>
       {categories.map(cat => (

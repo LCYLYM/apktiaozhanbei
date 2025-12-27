@@ -77,10 +77,8 @@ const App: React.FC = () => {
         return <OfflineMode onBack={() => setView(ViewState.DASHBOARD)} userProfile={userProfile} />;
       case ViewState.OFFLINE_POLICE:
         return (
-          <OfflineMode
+          <OfflinePolice
             onBack={() => setView(ViewState.DASHBOARD)}
-            userProfile={userProfile}
-            initialCategory="police_emergency"
           />
         );
       case ViewState.AI_CENTER:
