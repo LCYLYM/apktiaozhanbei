@@ -72,11 +72,9 @@ const App: React.FC = () => {
   const navStackRef = useRef<ViewState[]>([ViewState.DASHBOARD]);
 
   useEffect(() => {
-    // Initialize history with two entries so that pressing back from the
-    // dashboard does not immediately exit the app (common in Android WebViews).
+    // Initialize history with a single dashboard entry; we'll handle double-back manually.
     window.history.replaceState({ view: ViewState.DASHBOARD }, '');
-    window.history.pushState({ view: ViewState.DASHBOARD }, '');
-    navStackRef.current = [ViewState.DASHBOARD, ViewState.DASHBOARD];
+    navStackRef.current = [ViewState.DASHBOARD];
 
     const onPop = (_e: PopStateEvent) => {
       // If we have a previous view in our stack, pop and navigate to it.
@@ -95,14 +93,12 @@ const App: React.FC = () => {
 
       if (last && now - last < EXIT_THRESHOLD) {
         // Second back within threshold: allow native exit (navigate back in history)
-        // Remove our popstate listener guard and go back one step in history to exit.
-        // Some environments may close the app on history.back(); this attempts that.
         window.removeEventListener('popstate', onPop);
-        window.history.go(-1);
+        window.history.back();
         return;
       }
 
-      // First back: show prompt and re-push a dashboard state to stay in-app
+      // First back: show prompt and re-insert a history entry to keep the app in place
       setShowExitPrompt(true);
       lastBackRef.current = now;
       if (exitPromptTimeoutRef.current) {
@@ -114,10 +110,9 @@ const App: React.FC = () => {
         exitPromptTimeoutRef.current = null;
       }, EXIT_THRESHOLD);
 
+      // Push a transient state so user stays in-app; do not modify navStackRef (it's an internal stack of app views)
       window.history.pushState({ view: ViewState.DASHBOARD }, '');
-      navStackRef.current.push(ViewState.DASHBOARD);
       popNavigationRef.current = true;
-      setView(ViewState.DASHBOARD);
     };
 
     window.addEventListener('popstate', onPop);
