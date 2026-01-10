@@ -22,88 +22,12 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-    const inputBarRef = useRef<HTMLDivElement>(null);
-
-    const [inputBarHeight, setInputBarHeight] = useState<number>(0);
-    const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
-    const keyboardEstimateRef = useRef<number | null>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // Measure input bar height and listen to visualViewport (keyboard) changes
-    useEffect(() => {
-        const measure = () => setInputBarHeight(inputBarRef.current?.offsetHeight ?? 0);
-        measure();
-        window.addEventListener('resize', measure);
-        return () => window.removeEventListener('resize', measure);
-    }, []);
-
-    useEffect(() => {
-        const vv = (window as any).visualViewport;
-        const KH_MIN = 80; // ignore small viewport changes (address bar / chrome hiding)
-        if (vv) {
-            const onResize = () => {
-                // raw keyboard height approximation
-                const raw = Math.max(0, window.innerHeight - vv.height - (vv.offsetTop || 0));
-                // clamp to reasonable max (70% of viewport)
-                const maxKh = Math.round(window.innerHeight * 0.7);
-                const clamped = Math.min(raw, maxKh);
-
-                // treat as keyboard only if it's meaningfully large
-                const candidateKh = clamped >= KH_MIN ? clamped : 0;
-
-                const inputFocused = inputRef.current && document.activeElement === inputRef.current;
-                const wasOpen = keyboardEstimateRef.current != null && keyboardEstimateRef.current > 0;
-
-                // Only update keyboard height when input is focused or keyboard was already open.
-                if (inputFocused || wasOpen) {
-                    setKeyboardHeight(candidateKh);
-                    keyboardEstimateRef.current = candidateKh || null;
-                    // allow layout settle then scroll
-                    setTimeout(scrollToBottom, 60);
-                } else {
-                    // Ignore incidental viewport changes; ensure keyboard is considered closed.
-                    if (candidateKh === 0 && keyboardEstimateRef.current) {
-                        keyboardEstimateRef.current = null;
-                        setKeyboardHeight(0);
-                    }
-                }
-            };
-            vv.addEventListener('resize', onResize);
-            vv.addEventListener('scroll', onResize);
-            // initial measure
-            onResize();
-            return () => {
-                vv.removeEventListener('resize', onResize);
-                vv.removeEventListener('scroll', onResize);
-            };
-        } else {
-            // visualViewport not available: use focus/blur heuristic on input
-            const inputEl = inputRef.current;
-            if (!inputEl) return;
-            const onFocus = () => {
-                // conservative estimate
-                const est = Math.round(window.innerHeight * 0.45);
-                keyboardEstimateRef.current = est;
-                setKeyboardHeight(est);
-                setTimeout(scrollToBottom, 60);
-            };
-            const onBlur = () => {
-                keyboardEstimateRef.current = null;
-                setKeyboardHeight(0);
-            };
-            inputEl.addEventListener('focus', onFocus);
-            inputEl.addEventListener('blur', onBlur);
-            return () => {
-                inputEl.removeEventListener('focus', onFocus);
-                inputEl.removeEventListener('blur', onBlur);
-            };
-        }
-    }, []);
-
-    useEffect(scrollToBottom, [messages, keyboardHeight]);
+    useEffect(scrollToBottom, [messages]);
 
     const appendSystemError = (text: string) => {
         const errorMsg: ChatMessage = {
@@ -293,7 +217,7 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
                 ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar" style={{ paddingBottom: inputBarHeight ? `${inputBarHeight + keyboardHeight + 12}px` : undefined }}>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-32">
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500 opacity-60">
                         <div className="w-20 h-20 glass-card rounded-full flex items-center justify-center mb-4 shadow-lg">
@@ -353,7 +277,7 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
                 <div ref={messagesEndRef} />
             </div>
 
-            <div ref={inputBarRef} className="p-4 glass-panel border-x-0 border-b-0 rounded-t-3xl safe-area-bottom" style={{ position: 'fixed', left: 0, right: 0, bottom: `calc(env(safe-area-inset-bottom) + ${keyboardHeight}px)`, zIndex: 60 }}>
+            <div className="p-4 glass-panel border-x-0 border-b-0 rounded-t-3xl safe-area-bottom">
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => fileInputRef.current?.click()}
@@ -373,7 +297,6 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
                             value={inputText}
                             onChange={e => setInputText(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                            onFocus={() => setTimeout(scrollToBottom, 60)}
                             placeholder="输入需要翻译/说明的内容..."
                             className="bg-transparent w-full outline-none text-slate-800 placeholder:text-slate-400 text-sm font-medium"
                             disabled={isLoading}

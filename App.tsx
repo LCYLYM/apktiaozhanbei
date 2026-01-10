@@ -7,17 +7,21 @@ import SosTools from './components/SosTools';
 import Profile from './components/Profile';
 import Pricing from './components/Pricing';
 import Checkout from './components/Checkout';
+import Login from './components/Login';
+import Register from './components/Register';
 import { ViewState, UserProfile } from './types';
 import { INITIAL_PROFILE } from './constants';
 import { SubscriptionService } from './services/subscriptionService';
 import { SubscriptionPlanId, SubscriptionState } from './types';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<ViewState>(ViewState.DASHBOARD);
+  const [view, setView] = useState<ViewState>(ViewState.LOGIN);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [userProfile, setUserProfile] = useState<UserProfile>(INITIAL_PROFILE);
   const [subscription, setSubscription] = useState<SubscriptionState>({ status: 'none' });
   const [selectedPlanId, setSelectedPlanId] = useState<SubscriptionPlanId>('personal');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ email: string; name: string } | null>(null);
 
   // Double-back to exit on dashboard
   const [showExitPrompt, setShowExitPrompt] = useState(false);
@@ -36,16 +40,6 @@ const App: React.FC = () => {
   const [containerBg, setContainerBg] = useState<string>(viewBackground(view));
 
   useEffect(() => {
-    // Load profile from local storage
-    const saved = localStorage.getItem('resq_profile');
-    if (saved) {
-      try {
-        setUserProfile(JSON.parse(saved));
-      } catch (e) {
-        console.error('Profile parse error', e);
-      }
-    }
-
     // Network status listeners
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -72,9 +66,9 @@ const App: React.FC = () => {
   const navStackRef = useRef<ViewState[]>([ViewState.DASHBOARD]);
 
   useEffect(() => {
-    // Initialize history with a single dashboard entry; we'll handle double-back manually.
-    window.history.replaceState({ view: ViewState.DASHBOARD }, '');
-    navStackRef.current = [ViewState.DASHBOARD];
+    // Initialize history with a single login entry; we'll handle double-back manually.
+    window.history.replaceState({ view: ViewState.LOGIN }, '');
+    navStackRef.current = [ViewState.LOGIN];
 
     const onPop = (_e: PopStateEvent) => {
       // If we have a previous view in our stack, pop and navigate to it.
@@ -111,7 +105,7 @@ const App: React.FC = () => {
       }, EXIT_THRESHOLD);
 
       // Push a transient state so user stays in-app; do not modify navStackRef (it's an internal stack of app views)
-      window.history.pushState({ view: ViewState.DASHBOARD }, '');
+      window.history.pushState({ view: ViewState.LOGIN }, '');
       popNavigationRef.current = true;
     };
 
@@ -139,7 +133,17 @@ const App: React.FC = () => {
 
   const handleProfileSave = (profile: UserProfile) => {
     setUserProfile(profile);
-    localStorage.setItem('resq_profile', JSON.stringify(profile));
+
+    // 将个人档案保存到用户账号中
+    if (currentUser) {
+      const users = JSON.parse(localStorage.getItem('resq_users') || '[]');
+      const userIndex = users.findIndex((u: any) => u.email === currentUser.email);
+
+      if (userIndex !== -1) {
+        users[userIndex].profile = profile;
+        localStorage.setItem('resq_users', JSON.stringify(users));
+      }
+    }
   };
 
   const handleSelectPlan = (planId: SubscriptionPlanId) => {
@@ -156,6 +160,62 @@ const App: React.FC = () => {
   const handleCancelSubscription = () => {
     const next = SubscriptionService.clear();
     setSubscription(next);
+  };
+
+  const handleLogin = async (email: string, password: string) => {
+    // 模拟登录验证
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // 检查本地存储中是否有用户数据
+    const users = JSON.parse(localStorage.getItem('resq_users') || '[]');
+    const user = users.find((u: any) => u.email === email && u.password === password);
+
+    if (user) {
+      setIsAuthenticated(true);
+      setCurrentUser({ email: user.email, name: user.name });
+
+      // 加载用户绑定的个人档案
+      if (user.profile) {
+        setUserProfile(user.profile);
+      } else {
+        setUserProfile({ ...INITIAL_PROFILE, name: user.name });
+      }
+
+      setView(ViewState.DASHBOARD);
+    } else {
+      throw new Error('Invalid credentials');
+    }
+  };
+
+  const handleRegister = async (email: string, password: string, name: string) => {
+    // 模拟注册
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // 检查邮箱是否已注册
+    const users = JSON.parse(localStorage.getItem('resq_users') || '[]');
+    if (users.find((u: any) => u.email === email)) {
+      throw new Error('Email already exists');
+    }
+
+    // 初始化用户个人档案
+    const userProfile = { ...INITIAL_PROFILE, name };
+
+    // 保存新用户
+    const newUser = { email, password, name, createdAt: Date.now(), profile: userProfile };
+    users.push(newUser);
+    localStorage.setItem('resq_users', JSON.stringify(users));
+
+    // 自动登录
+    setIsAuthenticated(true);
+    setCurrentUser({ email, name });
+    setUserProfile(userProfile);
+    setView(ViewState.DASHBOARD);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setView(ViewState.LOGIN);
   };
 
   // Slide transition state and logic (single animation)
@@ -203,6 +263,10 @@ const App: React.FC = () => {
 
   const renderViewFor = (v: ViewState) => {
     switch (v) {
+      case ViewState.LOGIN:
+        return <Login onLogin={handleLogin} onRegister={() => setView(ViewState.REGISTER)} />;
+      case ViewState.REGISTER:
+        return <Register onBack={() => setView(ViewState.LOGIN)} onRegister={handleRegister} />;
       case ViewState.OFFLINE_MEDICAL:
         return <OfflineMode onBack={() => window.history.back()} userProfile={userProfile} />;
       case ViewState.OFFLINE_POLICE:
@@ -233,6 +297,8 @@ const App: React.FC = () => {
             onSave={handleProfileSave}
             subscription={subscription}
             onCancelSubscription={handleCancelSubscription}
+            currentUser={currentUser}
+            onLogout={handleLogout}
           />
         );
       case ViewState.PRICING:

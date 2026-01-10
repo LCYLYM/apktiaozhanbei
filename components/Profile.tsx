@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Save, CreditCard, Crown, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, CreditCard, Crown, Trash2, LogOut, User } from 'lucide-react';
 import { SubscriptionState, UserProfile } from '../types';
 
 interface Props {
@@ -8,9 +8,11 @@ interface Props {
   onSave: (p: UserProfile) => void;
     subscription: SubscriptionState;
     onCancelSubscription: () => void;
+    currentUser?: { email: string; name: string } | null;
+    onLogout?: () => void;
 }
 
-const Profile: React.FC<Props> = ({ onBack, currentProfile, onSave, subscription, onCancelSubscription }) => {
+const Profile: React.FC<Props> = ({ onBack, currentProfile, onSave, subscription, onCancelSubscription, currentUser, onLogout }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<UserProfile>(currentProfile);
 
@@ -76,6 +78,32 @@ const Profile: React.FC<Props> = ({ onBack, currentProfile, onSave, subscription
                         </div>
                     )}
                 </div>
+
+                {/* User Account Info */}
+                {currentUser && (
+                    <div className="glass-card bg-gradient-to-br from-indigo-50/50 to-purple-50/50 p-5 rounded-[2rem] shadow-sm border border-indigo-100/60">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                                <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                                    <User size={24} className="text-indigo-600" />
+                                </div>
+                                <div>
+                                    <div className="text-sm font-bold text-slate-800">{currentUser.name}</div>
+                                    <div className="text-xs text-slate-500 font-medium mt-0.5">{currentUser.email}</div>
+                                </div>
+                            </div>
+                            {onLogout && (
+                                <button
+                                    onClick={onLogout}
+                                    className="px-3 py-1.5 rounded-xl text-xs font-bold bg-white/70 text-slate-600 border border-slate-200/60 hover:bg-white hover:text-rose-600 transition-colors flex items-center gap-2"
+                                    aria-label="退出登录"
+                                >
+                                    <LogOut size={14} /> 退出
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
         
         {/* ID Card / QR Section */}
         <div className="glass-card bg-white/70 p-6 rounded-[2rem] shadow-xl flex flex-col items-center text-center border-white/60">

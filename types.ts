@@ -1,4 +1,6 @@
 export enum ViewState {
+  LOGIN = 'LOGIN',
+  REGISTER = 'REGISTER',
   DASHBOARD = 'DASHBOARD',
   OFFLINE_MEDICAL = 'OFFLINE_MEDICAL',
   OFFLINE_POLICE = 'OFFLINE_POLICE',
@@ -62,6 +64,14 @@ export interface UserProfile {
   insuranceId: string;
   emergencyContact: string;
   medicalConditions: string;
+}
+
+export interface UserAccount {
+  email: string;
+  password: string;
+  name: string;
+  createdAt: number;
+  profile?: UserProfile;
 }
 
 export interface DictionaryItem {
