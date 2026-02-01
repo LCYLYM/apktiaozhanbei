@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Lock, ArrowRight, UserPlus, Sparkles, Eye, EyeOff } from 'lucide-react';
 
 interface Props {
@@ -12,9 +12,30 @@ const Login: React.FC<Props> = ({ onLogin, onRegister }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
+    const [isAutoLogin, setIsAutoLogin] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    // 组件加载时检查是否有保存的凭据
+    useEffect(() => {
+        const savedCredentials = localStorage.getItem('zhiyutong_remember_me');
+        if (savedCredentials) {
+            try {
+                const { email: savedEmail, password: savedPassword, rememberMe: savedRememberMe } = JSON.parse(savedCredentials);
+                if (savedRememberMe) {
+                    setEmail(savedEmail);
+                    setPassword(savedPassword);
+                    setRememberMe(true);
+                    setIsAutoLogin(true);
+                    // 自动登录
+                    performLogin(savedEmail, savedPassword);
+                }
+            } catch (e) {
+                console.error('Failed to parse saved credentials:', e);
+            }
+        }
+    }, []);
+
+    const performLogin = async (email: string, password: string) => {
         setError(null);
 
         if (!email || !password) {
@@ -30,11 +51,33 @@ const Login: React.FC<Props> = ({ onLogin, onRegister }) => {
         setIsLoading(true);
         try {
             await onLogin(email, password);
+            // 登录成功后保存凭据
+            if (rememberMe) {
+                localStorage.setItem('zhiyutong_remember_me', JSON.stringify({
+                    email,
+                    password,
+                    rememberMe: true
+                }));
+            }
         } catch (err) {
-            setError('登录失败，请检查邮箱和密码');
+            // 仅在非自动登录时显示错误
+            if (!isAutoLogin) {
+                setError('登录失败，请检查邮箱和密码');
+            } else {
+                // 自动登录失败时清除保存的凭据
+                localStorage.removeItem('zhiyutong_remember_me');
+                setRememberMe(false);
+                setIsAutoLogin(false);
+            }
         } finally {
             setIsLoading(false);
+            setIsAutoLogin(false);
         }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        performLogin(email, password);
     };
 
     return (
@@ -110,6 +153,24 @@ const Login: React.FC<Props> = ({ onLogin, onRegister }) => {
                                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
+                        </div>
+
+                        {/* Remember me checkbox */}
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="rememberMe"
+                                checked={rememberMe}
+                                onChange={e => setRememberMe(e.target.checked)}
+                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                disabled={isLoading}
+                            />
+                            <label
+                                htmlFor="rememberMe"
+                                className="text-xs font-medium text-slate-600 cursor-pointer select-none"
+                            >
+                                记住我
+                            </label>
                         </div>
 
                         {/* Login button */}
