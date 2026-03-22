@@ -21,6 +21,7 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -216,7 +217,7 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
                 ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar pb-32">
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-slate-500 opacity-60">
                         <div className="w-20 h-20 glass-card rounded-full flex items-center justify-center mb-4 shadow-lg">
@@ -291,6 +292,7 @@ const AiAssistant: React.FC<Props> = ({ onBack }) => {
 
                     <div className="flex-1 bg-white/60 backdrop-blur-sm rounded-full px-4 py-2 flex items-center border border-white/40 shadow-inner">
                         <input
+                            ref={inputRef}
                             type="text"
                             value={inputText}
                             onChange={e => setInputText(e.target.value)}

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, height=device-height">
     <title>智语通 | ZhiYuTong</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
@@ -32,6 +32,12 @@
             background-color: #f0f2f5;
             -webkit-font-smoothing: antialiased;
             overflow: hidden; /* Prevent body scroll, handle in app */
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            touch-action: none;
         }
         /* Glassmorphism Utilities */
         .glass-panel {
@@ -65,6 +71,23 @@
         .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
+        }
+
+        /* Prevent page scroll when keyboard is open */
+        input, textarea {
+            touch-action: none;
+        }
+
+        /* Prevent viewport bounce on iOS */
+        html, body {
+            overscroll-behavior: none;
+        }
+
+        /* Prevent visual viewport changes */
+        #root {
+            height: 100vh;
+            height: 100dvh;
+            position: relative;
         }
     </style>
 <!-- Local build: dependencies are bundled by Vite; no importmap needed. -->
